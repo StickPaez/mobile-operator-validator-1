@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="15 minutes">
+	<include resource="org/springframework/boot/logging/logback/defaults.xml" />
+	<include resource="org/springframework/boot/logging/logback/file-appender.xml" />
+
+	<!-- Don't forget to set "application.name" in application.yml -->
+	<springProperty scope="context" name="springAppName" source="application.name" />
+	<property name="LOG_FILE" value="${springAppName}}" />
+
+	<!-- Appender to log to console in plain text format -->
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<Pattern>
+				%black(%d{ISO8601}) %highlight(%-5level) [%blue(%t)] %yellow(%C{1.}): %msg%n%throwable
+			</Pattern>
+		</layout>
+	</appender>
+
+	<!-- Appender to log to file in a JSON format, one JSON object per line -->
+	<appender name="JSON_FILE" class="ch.qos.logback.core.FileAppender">
+		<file>/logs/${LOG_FILE}.log</file>
+
+		<encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+			<providers>
+				<pattern>
+					<pattern>
+						{
+						"timestamp": "%date{ISO8601}",
+						"level": "%level",
+						"class": "%class{36}",
+						"method": "%method",
+						"line": "%line",
+						"marker": "%marker",
+						"message": "%message",
+						"Exception": "%throwable"
+						}
+					</pattern>
+				</pattern>
+				<mdc />
+			</providers>
+		</encoder>
+	</appender>
+
+	<springProfile name="development">
+		<root level="INFO">
+			<appender-ref ref="JSON_FILE" />
+			<appender-ref ref="CONSOLE" />
+		</root>
+		<logger name="com.aldeamo" level="DEBUG" />
+	</springProfile>
+
+	<springProfile name="preprod, production">
+		<root level="INFO">
+			<appender-ref ref="JSON_FILE" />
+		</root>
+		<logger name="com.aldeamo" level="INFO" />
+	</springProfile>
+	
+</configuration>
