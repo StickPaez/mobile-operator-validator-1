@@ -13,4 +13,4 @@ services:
     volumes:
      - /etc/localtime:/etc/localtime:ro
      - /home/celuman/logs/__serviceName__:/logs/
-     - /home/celuman/deployDocker/__serviceName__/Files/config:/config
+     #- /home/celuman/deployDocker/__serviceName__/Files/config:/config
