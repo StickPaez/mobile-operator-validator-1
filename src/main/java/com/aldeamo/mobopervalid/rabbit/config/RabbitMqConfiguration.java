@@ -6,14 +6,11 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.AmqpAdmin;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.CustomExchange;
-import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.Binding.DestinationType;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -22,7 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.aldeamo.mobopervalid.rabbit.ValidationConsumer;
+import com.aldeamo.mobopervalid.rabbit.ValidatorConsumer;
 
 @Configuration
 public class RabbitMqConfiguration {
@@ -38,19 +35,17 @@ public class RabbitMqConfiguration {
 	private String queueNames;
 	@Value("${application.rabbit.producerQueueNames}")
 	private String producerQueueNames;
-	@Value("${application.rabbit.exchangeNamePrefix}")
-	private String exchangeNamePrefix;
 	@Value("${application.rabbit.concurrentConsumers}")
 	private String concurrentConsumers;
 
 
 	@Bean
-	ValidationConsumer receiver() {
-		return new ValidationConsumer();
+	ValidatorConsumer receiver() {
+		return new ValidatorConsumer();
 	}
 
 	@Bean
-	MessageListenerAdapter listenerAdapter(ValidationConsumer receiver) {
+	MessageListenerAdapter listenerAdapter(ValidatorConsumer receiver) {
 		return new MessageListenerAdapter(receiver, jsonMessageConverter());
 	}
 
@@ -70,22 +65,11 @@ public class RabbitMqConfiguration {
 			adm.declareQueue(queue);
 			logger.info("CREATED QUEUE : {} ", queue.getName());
 		}
-		
-		Map<String, Object> argumentsExchange = new HashMap<>();
-		argumentsExchange.put("x-delayed-type", "direct");
 
 		for (String queueName : producerQueues) {
 			Queue queue = new Queue(queueName, true, false, false, argumentsQueue);
 			adm.declareQueue(queue);
 			logger.info("CREATED PRODUCER QUEUE : {} ",queue.getName());
-			
-			Exchange exchange = new CustomExchange(exchangeNamePrefix + queueName, "x-delayed-message", true, false, argumentsExchange);
-			adm.declareExchange(exchange);
-			logger.info("CREATED EXCHANGE : {}", exchange.getName());
-			
-			Binding binding = new Binding(queueName, DestinationType.QUEUE, exchangeNamePrefix + queueName, "", null);
-			adm.declareBinding(binding);
-			logger.info("CREATED BINDING : {} - {}", binding.getDestination(), binding.getExchange());
 		}
 		container.setQueueNames(queues);
 		container.setConcurrentConsumers(Integer.parseInt(concurrentConsumers));
@@ -113,4 +97,12 @@ public class RabbitMqConfiguration {
 	public MessageConverter jsonMessageConverter() {
 		return new Jackson2JsonMessageConverter();
 	}
+	
+    @Bean
+    public RabbitTemplate rabbitTemplate()
+    {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory());      
+        template.setMessageConverter(jsonMessageConverter());
+        return template;
+    }
 }
