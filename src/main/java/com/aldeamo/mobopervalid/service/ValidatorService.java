@@ -109,7 +109,7 @@ public class ValidatorService {
 		result.setTotalEmpty(totalEmpty);
 		result.setTotalInvalid(totalInvalid);
 		result.setTotalPorted(totalPorted);
-		result.setTotalValid(result.getValidList().size());
+		result.setTotalValid(validList.size());
 		result.setValidList(validList);
 		result.setInvalidList(invalidList);
 		logger.info("Result validation [TotalValid:{}][TotalInvalid:{}]", result.getTotalValid(), result.getTotalInvalid());
@@ -188,5 +188,9 @@ public class ValidatorService {
 		} catch (Exception e) {
 			logger.error("Error save result in mongo: {}",e.getMessage(), e);
 		}
+	}
+
+	public void setResultQueueName(String resultQueueName) {
+		this.resultQueueName = resultQueueName;
 	}
 }

@@ -1,5 +1,10 @@
-package com.aldeamo.mobopervalid.controller;
+package com.aldeamo.mobopervalid.rabbit;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -10,23 +15,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.aldeamo.mobopervalid.dto.Response;
 import com.aldeamo.mobopervalid.dto.ValidationRequest;
@@ -36,53 +36,15 @@ import com.aldeamo.mobopervalid.model.ValidationDetail;
 import com.aldeamo.mobopervalid.model.ValidationResult;
 import com.aldeamo.mobopervalid.service.ValidatorService;
 import com.aldeamo.mobopervalid.util.TransactionId;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
-@ExtendWith(SpringExtension.class)
-@ActiveProfiles("test")
-@WebAppConfiguration
-class ValidatorControllerTest {
-    
-	private MockMvc mvc;
-	
+@ExtendWith(MockitoExtension.class)
+class ValidatorConsumerTest {
     @InjectMocks
-    ValidatorController validatorController;
-    
+    ValidatorConsumer validatorConsumer;
+
     @Mock
 	ValidatorService validatorService;
-    
-	@BeforeEach
-    public void init() {
-        mvc = MockMvcBuilders.standaloneSetup(validatorController).build();
-    }
-	
-	public static String asJsonString(final Object obj) {
-	    try {
-	        final ObjectMapper mapper = new ObjectMapper();
-	        final String jsonContent = mapper.writeValueAsString(obj);
-	        return jsonContent;
-	    } catch (Exception e) {
-	        throw new RuntimeException(e);
-	    }
-	}
-	
-    @Test
-    void whenDefaultRoute_thenReturn404() throws Exception {
-    	mvc.perform(MockMvcRequestBuilders.get("/")).andExpect(status().isNotFound());
-    }
-    
-    @Test
-    void whenRequestValidationAndNoParams_thenReturn400() throws Exception {
-    	mvc.perform(MockMvcRequestBuilders.post("/requestValidation")).andExpect(status().isBadRequest());
-    }
     
     @Test
     void whenRequestValidationAndValidParams_thenCallServiceAndReturnSuccess() throws Exception { 	
@@ -108,15 +70,8 @@ class ValidatorControllerTest {
     		request.setLand("57");
     		request.setUserId(123456);
     		
-	    	MvcResult result = mvc.perform(
-	    			MockMvcRequestBuilders.post("/requestValidation")
-	    				.content(asJsonString(request))
-	    				.contentType(MediaType.APPLICATION_JSON)
-	    				.accept(MediaType.APPLICATION_JSON)
-	    			)
-	    			.andExpect(status().isOk())
-	    			.andReturn();
-	    	
+    		validatorConsumer.handleMessage(request);
+    		
 	    	ArgumentCaptor<ValidationRequest> validationRequestCaptor = ArgumentCaptor.forClass(ValidationRequest.class);
 	    	verify(validatorService, times(1)).processRequest(validationRequestCaptor.capture(),eq("transactionIdTest"));
 	    	
@@ -126,14 +81,6 @@ class ValidatorControllerTest {
 	    	assertEquals("57", validationRequest.getLand());
 	    	assertEquals(1, validationRequest.getGsmList().size());
 	    	assertEquals("3001234567", validationRequest.getGsmList().get(0));
-	    	
-	    	String actualResponse = result.getResponse().getContentAsString();
-	    	
-	    	JSONAssert.assertEquals("{\"status\":1,\"reason\":\"Request Received\",\"data\":{\"validationResult\":"
-	    			+ "\"{\\\"totalValid\\\":1,\\\"totalInvalid\\\":0,\\\"totalNull\\\":0,\\\"totalEmpty\\\":0,\\\"totalPorted\\\":0,"
-	    			+ "\\\"validList\\\":[{\\\"gsm\\\":\\\"3001234567\\\",\\\"status\\\":0,\\\"operatorId\\\":2,\\\"operatorName\\\":\\\"Claro\\\"}],"
-	    			+ "\\\"invalidList\\\":[]}\"}}",
-	    			actualResponse, JSONCompareMode.LENIENT);
     	}
     }
 }
