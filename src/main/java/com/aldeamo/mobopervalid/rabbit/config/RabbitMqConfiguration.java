@@ -20,7 +20,6 @@ import org.springframework.context.annotation.Configuration;
 
 import com.aldeamo.mobopervalid.rabbit.ValidatorConsumer;
 
-@Configuration
 public class RabbitMqConfiguration {
 
 	private static final Logger logger = LoggerFactory.getLogger(RabbitMqConfiguration.class);

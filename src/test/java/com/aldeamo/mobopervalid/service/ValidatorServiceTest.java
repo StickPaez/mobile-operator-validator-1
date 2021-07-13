@@ -17,11 +17,12 @@ import com.aldeamo.mobopervalid.model.ValidationDetail;
 import com.aldeamo.mobopervalid.model.ValidationResult;
 import com.aldeamo.mobopervalid.rabbit.MessagePublisher;
 import com.aldeamo.mobopervalid.repository.portability.IPortedNumber;
+import com.aldeamo.mobopervalid.repository.validation.ValidationRegisterRepository;
 import com.google.gson.Gson;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,6 +49,9 @@ class ValidatorServiceTest {
     @Mock
 	MessagePublisher publisher;
     
+    @Mock
+	ValidationRegisterRepository validationRegisterRepository;
+    
     String queueName;
     
     ValidationRequest validationRequest;
@@ -72,13 +76,20 @@ class ValidatorServiceTest {
 		country.setDescription("Colombia");
     }
     
+    private void verifyBadRequest(Response response) {
+    	assertNotNull(response);
+    	assertEquals(-8, response.getStatus());
+    	assertEquals("Bad Request", response.getReason());
+    	
+    	verify(publisher, never()).sendResult(any(ValidationResult.class), eq(queueName));
+    	verify(validationRegisterRepository, never()).save(any());
+    }
+    
     @Test
     void processRequest_whenValidationRequestIsNull_ReturnBadRequestAndNotSendToRabbitAndNotSaveInMongo(){
     	Response response = validatorService.processRequest(null, "transactionIdTest");
     	
-    	assertNotNull(response);
-    	assertEquals(-8, response.getStatus());
-    	assertEquals("Bad Request", response.getReason());
+    	verifyBadRequest(response);
     }
     
     @Test
@@ -87,9 +98,7 @@ class ValidatorServiceTest {
     	
     	Response response = validatorService.processRequest(validationRequest, "transactionIdTest");
     	
-    	assertNotNull(response);
-    	assertEquals(-8, response.getStatus());
-    	assertEquals("Bad Request", response.getReason());
+    	verifyBadRequest(response);
     }
     
     @Test
@@ -98,9 +107,7 @@ class ValidatorServiceTest {
     	
     	Response response = validatorService.processRequest(validationRequest, "transactionIdTest");
     	
-    	assertNotNull(response);
-    	assertEquals(-8, response.getStatus());
-    	assertEquals("Bad Request", response.getReason());
+    	verifyBadRequest(response);
     }
     
     @Test
@@ -109,9 +116,7 @@ class ValidatorServiceTest {
     	
     	Response response = validatorService.processRequest(validationRequest, "transactionIdTest");
     	
-    	assertNotNull(response);
-    	assertEquals(-8, response.getStatus());
-    	assertEquals("Bad Request", response.getReason());
+    	verifyBadRequest(response);
     }
     
     @Test
@@ -120,9 +125,7 @@ class ValidatorServiceTest {
     	
     	Response response = validatorService.processRequest(validationRequest, "transactionIdTest");
     	
-    	assertNotNull(response);
-    	assertEquals(-8, response.getStatus());
-    	assertEquals("Bad Request", response.getReason());
+    	verifyBadRequest(response);
     }
     
     @Test
@@ -131,9 +134,7 @@ class ValidatorServiceTest {
     	
     	Response response = validatorService.processRequest(validationRequest, "transactionIdTest");
     	
-    	assertNotNull(response);
-    	assertEquals(-8, response.getStatus());
-    	assertEquals("Bad Request", response.getReason());
+    	verifyBadRequest(response);
     }
     
     @Test
@@ -142,9 +143,7 @@ class ValidatorServiceTest {
     	
     	Response response = validatorService.processRequest(validationRequest, "transactionIdTest");
     	
-    	assertNotNull(response);
-    	assertEquals(-8, response.getStatus());
-    	assertEquals("Bad Request", response.getReason());
+    	verifyBadRequest(response);
     }
     
     @Test
@@ -174,6 +173,7 @@ class ValidatorServiceTest {
     	assertTrue(validationResult.getValidList().isEmpty());
     	
     	verify(publisher, times(1)).sendResult(any(ValidationResult.class), eq(queueName));
+    	verify(validationRegisterRepository, times(1)).save(any());
     }
     
     @Test
@@ -203,6 +203,7 @@ class ValidatorServiceTest {
     	assertTrue(validationResult.getValidList().isEmpty());
     	
     	verify(publisher, times(1)).sendResult(any(ValidationResult.class), eq(queueName));
+    	verify(validationRegisterRepository, times(1)).save(any());
     }
     
     @Test
@@ -238,6 +239,7 @@ class ValidatorServiceTest {
     	assertEquals(null, validationDetail1.getOperatorName());
     	
     	verify(publisher, times(1)).sendResult(any(ValidationResult.class), eq(queueName));
+    	verify(validationRegisterRepository, times(1)).save(any());
     }
     
     @Test
@@ -281,6 +283,7 @@ class ValidatorServiceTest {
     	assertEquals("tigo", validationDetail1.getOperatorName());
     	
     	verify(publisher, times(1)).sendResult(any(ValidationResult.class), eq(queueName));
+    	verify(validationRegisterRepository, times(1)).save(any());
     }
     
     @Test
@@ -319,6 +322,7 @@ class ValidatorServiceTest {
     	assertEquals(null, validationDetail1.getOperatorName());
     	
     	verify(publisher, times(1)).sendResult(any(ValidationResult.class), eq(queueName));
+    	verify(validationRegisterRepository, times(1)).save(any());
     }
     
     @Test
@@ -359,6 +363,7 @@ class ValidatorServiceTest {
     	assertEquals(null, validationDetail1.getOperatorName());
     	
     	verify(publisher, times(1)).sendResult(any(ValidationResult.class), eq(queueName));
+    	verify(validationRegisterRepository, times(1)).save(any());
     }
     
     @Test
@@ -402,5 +407,6 @@ class ValidatorServiceTest {
     	assertEquals("claro", validationDetail1.getOperatorName());
     	
     	verify(publisher, times(1)).sendResult(any(ValidationResult.class), eq(queueName));
+    	verify(validationRegisterRepository, times(1)).save(any());
     }
 }
