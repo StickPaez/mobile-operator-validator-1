@@ -1,5 +1,7 @@
 package com.aldeamo.mobopervalid.service;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,9 +20,11 @@ import com.aldeamo.mobopervalid.entity.portability.PortedNumber;
 import com.aldeamo.mobopervalid.enumerator.ResponseStatusEnum;
 import com.aldeamo.mobopervalid.enumerator.ValidationGsmStatusEnum;
 import com.aldeamo.mobopervalid.model.ValidationDetail;
+import com.aldeamo.mobopervalid.model.ValidationRegister;
 import com.aldeamo.mobopervalid.model.ValidationResult;
 import com.aldeamo.mobopervalid.rabbit.MessagePublisher;
 import com.aldeamo.mobopervalid.repository.portability.IPortedNumber;
+import com.aldeamo.mobopervalid.repository.validation.ValidationRegisterRepository;
 import com.google.gson.Gson;
 
 @Service
@@ -38,6 +42,9 @@ public class ValidatorService {
 	
 	@Autowired
 	MessagePublisher publisher;
+	
+	@Autowired
+	ValidationRegisterRepository validationRegisterRepository;
 
 	public Response processRequest(ValidationRequest validationRequest, String transactionId) {
 		try {			
@@ -56,7 +63,7 @@ public class ValidatorService {
 			}
 			ValidationResult result = iterateGsmList(validationRequest, coreCountry);
 			publishResult(result);
-			saveResult(result, transactionId);
+			saveResult(validationRequest, result, transactionId);
 			response.setDataPair("validationResult", new Gson().toJson(result));
 			return response;
 			
@@ -175,16 +182,22 @@ public class ValidatorService {
 	private void publishResult(ValidationResult validationResult) {
 		try {
 			publisher.sendResult(validationResult, resultQueueName);
-			logger.info("Send result: {}, queueName : {}", validationResult, resultQueueName);
+			logger.info("Send validationResult: {}, queueName : {}", validationResult, resultQueueName);
 		} catch (Exception e) {
 			logger.error("Error sending message to result RabbitMQ: {}",e.getMessage(), e);
 		}
 	}
 	
-	private void saveResult(ValidationResult validationResult, String transactionId) {
+	private void saveResult(ValidationRequest validationRequest, ValidationResult validationResult, String transactionId) {
 		try {
-			//TODO: Connection to mongo
-			logger.info("save validationResult: {}, transactionId : {}", validationResult, transactionId);
+			ValidationRegister validationRegister = new ValidationRegister();
+			validationRegister.setId(transactionId);
+			ZonedDateTime now = ZonedDateTime.now(ZoneId.of("America/Bogota"));
+			validationRegister.setDateStored(now.toLocalDateTime());
+			validationRegister.setRequest(validationRequest);
+			validationRegister.setResult(validationResult);
+			validationRegisterRepository.save(validationRegister);
+			logger.info("save in mongo validationRegister: {}, transactionId : {}", validationRegister, transactionId);
 		} catch (Exception e) {
 			logger.error("Error save result in mongo: {}",e.getMessage(), e);
 		}
