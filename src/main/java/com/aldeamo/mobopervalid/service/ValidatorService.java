@@ -56,6 +56,7 @@ public class ValidatorService {
 			}
 			ValidationResult result = iterateGsmList(validationRequest, coreCountry);
 			publishResult(result);
+			saveResult(result, transactionId);
 			response.setDataPair("validationResult", new Gson().toJson(result));
 			return response;
 			
@@ -177,6 +178,15 @@ public class ValidatorService {
 			logger.info("Send result: {}, queueName : {}", validationResult, resultQueueName);
 		} catch (Exception e) {
 			logger.error("Error sending message to result RabbitMQ: {}",e.getMessage(), e);
+		}
+	}
+	
+	private void saveResult(ValidationResult validationResult, String transactionId) {
+		try {
+			//TODO: Connection to mongo
+			logger.info("save validationResult: {}, transactionId : {}", validationResult, transactionId);
+		} catch (Exception e) {
+			logger.error("Error save result in mongo: {}",e.getMessage(), e);
 		}
 	}
 }
