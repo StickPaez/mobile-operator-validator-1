@@ -18,24 +18,24 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Configuration
 @EnableTransactionManagement
-@EnableJpaRepositories(entityManagerFactoryRef = "validatorsEntityManagerFactory", transactionManagerRef = "validatorsTransactionManager", basePackages = {
-		"com.aldeamo.mobopervalid.repository" })
-@EntityScan("com.aldeamo.mobopervalid.entities.*")
-public class ValidatorsDBConfig {
+@EnableJpaRepositories(entityManagerFactoryRef = "portabilityCoreEntityManagerFactory", transactionManagerRef = "portabilityCoreTransactionManager", basePackages = {
+		"com.aldeamo.mobopervalid.repository.portability" })
+@EntityScan("com.aldeamo.mobopervalid.entity.portability.*")
+public class PortabilityCoreDBConfig {
 
-	@Bean(name = "validatorsDataSource")
-	@ConfigurationProperties(prefix = "spring.datasource")
+	@Bean(name = "portabilityCoreDataSource")
+	@ConfigurationProperties(prefix = "spring.portability-core-datasource")
 	public DataSource dataSource() {
 		return DataSourceBuilder.create().build();
 	}
 
-	@Bean(name = "validatorsEntityManagerFactory")
-	public LocalContainerEntityManagerFactoryBean entityManagerFactory(EntityManagerFactoryBuilder builder, @Qualifier("validatorsDataSource") DataSource dataSource) {
-		return builder.dataSource(dataSource).packages("com.aldeamo.mobopervalid.entities").persistenceUnit("validatorsPU").build();
+	@Bean(name = "portabilityCoreEntityManagerFactory")
+	public LocalContainerEntityManagerFactoryBean entityManagerFactory(EntityManagerFactoryBuilder builder, @Qualifier("portabilityCoreDataSource") DataSource dataSource) {
+		return builder.dataSource(dataSource).packages("com.aldeamo.mobopervalid.entity.portability").persistenceUnit("portabilityPU").build();
 	}
 
-	@Bean(name = "validatorsTransactionManager")
-	public PlatformTransactionManager transactionManager(@Qualifier("validatorsEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
+	@Bean(name = "portabilityCoreTransactionManager")
+	public PlatformTransactionManager transactionManager(@Qualifier("portabilityCoreEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
 		return new JpaTransactionManager(entityManagerFactory);
 	}
 
